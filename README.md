@@ -120,6 +120,45 @@ Each uses a different consumer group:
 - `inapp-group`
 Ensures all consumers receive the same event
 
+### User Preferences API
+Users can dynamically control how they receive notifications.
+
+### Endpoints
+```
+GET /preferences/{userId}
+POST /preferences
+PUT /preferences/{userId}
+```
+
+#### Create Preferences
+
+```bash
+curl -X POST http://localhost:8080/preferences \
+-H "Content-Type: application/json" \
+-d '{
+  "userId": "100",
+  "emailEnabled": true,
+  "pushEnabled": true,
+  "inAppEnabled": false
+}'
+```
+
+#### Get Preferenes
+```
+curl http://localhost:8080/preferences/100
+```
+
+#### Update Preferences
+```
+curl -X PUT http://localhost:8080/preferences/100 \
+-H "Content-Type: application/json" \
+-d '{
+  "emailEnabled": false,
+  "pushEnabled": true,
+  "inAppEnabled": true
+}'
+```
+
 ---
 
 # Getting Started
