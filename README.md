@@ -49,13 +49,76 @@ Instead of processing requests synchronously, events are sent to Kafka and handl
 * Does NOT process business logic
 ### Kafka (Message Broker)
 * Stores events
-* Delivers them to consumers
-### Consumer
-* Reads events from Kafka
-* Processes them
-* Saves data to PostgreSQL
+* Distributes them to multiple consumers
+* Enables asynchronous processing
+### Consumers
+#### Notification Consumer  
+Saves notifications to PostgreSQL
+Handles:
+* Deduplication (Redis)
+* Rate limiting (Redis)
+* Retry logic
+* Dead Letter Queue (DLQ)
+
+#### EmailConsumer
+* Simulates sending email notifications
+
+#### PushConsumer
+* Simulates push notifications
+
+#### InAppConsumer
+* Simulates in-app notifications
+
 ### Database (PostgreSQL)
 * Stores final notification data
+
+### Redis
+Deduplication (prevent duplicate events)
+Rate limiting (prevent spam)
+
+---
+
+
+## Key Features
+
+### Deduplication (Idempotency)
+Each event has a unique `eventId`.
+Stored in Redis: ```event:{eventId}```
+Prevents duplicate processing, if the event is already processed:
+- Duplicate event is ignored
+
+### Rate Limiting
+Limits the number of requests per user.
+Redis key: ```rate:{userId}```
+Behavior:
+- First requests → accepted
+- After threshold → blocked
+Example: ```Rate limit exceeded for user: 123```
+
+### Retry Mechanism
+If processing fails:
+``` notifications -> notifications-retry -> notifications-dlq```
+- Retries up to 3 times
+- Uses Kafka retry topic
+
+
+### Dead Letter Queue (DLQ)
+After maximum retries:
+Message is sent to: ```notifications-dlq```
+Used for:
+- Debugging failures
+- Manual recovery
+
+### Fanout (Publish-Subscribe)
+One event is delivered to multiple independent consumers:
+- Email
+- Push
+- In-App
+Each uses a different consumer group:
+- `email-group`
+- `push-group`
+- `inapp-group`
+Ensures all consumers receive the same event
 
 ---
 
@@ -70,15 +133,7 @@ cd notification-service
 
 ---
 
-## 2. Build the application
-
-```bash
-./mvnw clean package -DskipTests
-```
-
----
-
-## 3. Run the system
+## 2. Run all the services
 
 ```bash
 docker compose up --build
@@ -98,6 +153,7 @@ You should see:
 * kafka
 * zookeeper
 * postgres
+* redis
 
 ---
 
@@ -150,7 +206,8 @@ SELECT * FROM notification;
 A **rate limiter** is implemented to prevent users from spamming notifications.
 When the limit is exceeded:
 - Requests are **blocked**
-- Logs will show: `Rate limit exceeded for user: xxxx` 
+- Logs will show: `Rate limit exceeded for user: xxxx`
+
 ## Send Mutliple Notifications  
 Use this script to simulate spam requests:
 ```
@@ -161,7 +218,6 @@ do
   -d "{\"eventId\":\"$i\",\"userId\":\"12121212\",\"message\":\"spam test\"}"
 done
 ```
-
 ## Expected Behavior
 First few requests -> accepted  
 Remaining requests -> blocked by rate limiter  
@@ -196,27 +252,3 @@ SELECT * FROM notification;
   * `postgres:5432`
 
 ---
-
-# Key Concepts
-
-## Event-Driven Architecture
-
-* API does NOT process requests directly
-* Events are sent to Kafka
-* Consumers handle processing
-
----
-
-## Decoupling
-
-* Producer and consumer are independent
-* System is scalable and flexible
-
----
-
-## Asynchronous Processing
-
-* Faster API response
-* Better performance under load
-
-
