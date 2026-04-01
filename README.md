@@ -146,6 +146,34 @@ SELECT * FROM notification;
 }
 ```
 
+# Test Rate Limiting
+A **rate limiter** is implemented to prevent users from spamming notifications.
+When the limit is exceeded:
+- Requests are **blocked**
+- Logs will show: `Rate limit exceeded for user: xxxx` 
+## Send Mutliple Notifications  
+Use this script to simulate spam requests:
+```
+for i in {1..10}
+do
+  curl -X POST http://localhost:8080/notifications \
+  -H "Content-Type: application/json" \
+  -d "{\"eventId\":\"$i\",\"userId\":\"12121212\",\"message\":\"spam test\"}"
+done
+```
+
+## Expected Behavior
+First few requests -> accepted  
+Remaining requests -> blocked by rate limiter  
+
+# Check Database
+```bash
+docker exec -it notification-service-postgres-1 psql -U postgres -d notifications
+```
+
+```sql
+SELECT * FROM notification;
+```
 ---
 
 # Docker Setup
