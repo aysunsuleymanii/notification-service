@@ -26,16 +26,27 @@ public class NotificationConsumer {
         try {
             NotificationEvent event = objectMapper.readValue(message, NotificationEvent.class);
 
-            String key = "event:" + event.getEventId();
+            String dedupKey = "event:" + event.getEventId();
+            String rateKey = "rate:" + event.getUserId();
 
-            Boolean exists = redisTemplate.hasKey(key);
-
+            Boolean exists = redisTemplate.hasKey(dedupKey);
             if (Boolean.TRUE.equals(exists)) {
                 System.out.println("Duplicate event ignored: " + event.getEventId());
                 return;
             }
 
-            redisTemplate.opsForValue().set(key, "processed", Duration.ofMinutes(10));
+            redisTemplate.opsForValue().set(dedupKey, "processed", Duration.ofMinutes(10));
+
+            Long count = redisTemplate.opsForValue().increment(rateKey);
+
+            if (count != null && count == 1) {
+                redisTemplate.expire(rateKey, Duration.ofMinutes(1));
+            }
+
+            if (count != null && count > 5) {
+                System.out.println("Rate limit exceeded for user: " + event.getUserId());
+                return;
+            }
 
             Notification notification = Notification.builder()
                     .userId(event.getUserId())
