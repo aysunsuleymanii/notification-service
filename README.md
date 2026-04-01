@@ -159,6 +159,30 @@ curl -X PUT http://localhost:8080/preferences/100 \
 }'
 ```
 
+
+### Mark Notification as read
+Notifications can transition from **unread -> read**
+Users can mark notifications as **READ** 
+
+Endpoint:
+```
+PUT /notifications/{id}/read
+```
+
+#### Get notifications
+```
+curl http://localhost:8080/notifications/{userId}
+```
+Copy a notification id.
+
+#### Mark as READ
+```curl -X PUT http://localhost:8080/notifications/{id}/read```
+
+
+#### Verify
+```curl http://localhost:8080/notifications/{userId}```
+
+
 ---
 
 # Getting Started
