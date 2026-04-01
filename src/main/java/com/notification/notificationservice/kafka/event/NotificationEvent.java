@@ -12,4 +12,5 @@ public class NotificationEvent {
     private String eventId;
     private String userId;
     private String message;
+    private int retryCount;
 }

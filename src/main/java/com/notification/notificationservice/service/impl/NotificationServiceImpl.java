@@ -25,6 +25,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .eventId(UUID.randomUUID().toString())
                 .userId(userId)
                 .message(message)
+                .retryCount(0)
                 .build();
 
         notificationProducer.send(event);
