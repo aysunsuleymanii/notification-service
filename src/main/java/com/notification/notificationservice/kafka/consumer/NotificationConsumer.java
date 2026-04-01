@@ -1,4 +1,4 @@
-package com.notification.notificationservice.kafka;
+package com.notification.notificationservice.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notification.notificationservice.kafka.event.NotificationEvent;
